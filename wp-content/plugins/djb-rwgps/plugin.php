@@ -13,7 +13,7 @@
    /* Version History                                                        */ 
    /**************************************************************************/ 
    /*
-		0.0.1		1/12/2015	created initial plugin, includes map and elevation img shortcodes
+		0.0.2		1/12/2015	created initial plugin, includes user, map and elevation img shortcodes
    */
 
    /**************************************************************************/
@@ -53,7 +53,15 @@
    Add a link to the RideWithGPS profile page for the given user
    [rwgps-profile id=12345 name=&quot;Joe Biker&quot; ], resolves to  <a href="http://ridewithgps.com/users/12345">Joe Biker</a>
    */
+   function rwgps_user_shortcode($atts) {
+        extract( shortcode_atts( array(
+            'id' => '000000',
+            'name' => '',
+        ), $atts, 'user'));
 
+        return sprintf('<a href="http://ridewithgps.com/users/%1$s">%2$s</a>', $id, $name);
+    }
+    add_shortcode('rwgps-user', 'rwgps_user_shortcode');
 
 
 
