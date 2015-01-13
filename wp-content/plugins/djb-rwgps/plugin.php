@@ -47,13 +47,13 @@
     add_shortcode('rwgps-map', 'rwgps_map_img_shortcode');
 
    /**************************************************************************/
-   /* User Shortcodes                                                     */ 
+   /* User Shortcodes                                                        */ 
    /**************************************************************************/ 
    /*
    Add a link to the RideWithGPS profile page for the given user
    [rwgps-profile id=12345 name=&quot;Joe Biker&quot; ], resolves to  <a href="http://ridewithgps.com/users/12345">Joe Biker</a>
    */
-   function rwgps_user_shortcode($atts) {
+   function rwgps_profile_shortcode($atts) {
         extract( shortcode_atts( array(
             'id' => '000000',
             'name' => '',
@@ -61,11 +61,56 @@
 
         return sprintf('<a href="http://ridewithgps.com/users/%1$s">%2$s</a>', $id, $name);
     }
-    add_shortcode('rwgps-user', 'rwgps_user_shortcode');
+    add_shortcode('rwgps-profile', 'rwgps_profile_shortcode');
 
 
+   /**************************************************************************/
+   /* User Metadata - RWGPS id                                               */ 
+   /**************************************************************************/ 
 
+   function display_rwgps_user_profile_info($user){
+       ?>
+            <h3>RideWithGPS Profile</h3>
+            <table class="form-table">
+                <tr>
+                    <th><label for="id">User Id</label></th>
+                    <td>
+                        <input type="text" name="rwgps_userid" value="<?php echo esc_attr( get_the_author_meta( 'rwgps_userid', $user->ID ) ); ?>" class="regular-text" />
+                        <br/>
+                        <span class="description">Please enter your RideWithGPS user id.</span>
+                    </td>
+                </tr>
+                <tr>
+                    <th><label for="id">Profile Link Label</label></th>
+                    <td>
+                        <input type="text" name="rwgps_user_profile_text" value="<?php echo esc_attr( get_the_author_meta( 'rwgps_user_profile_text', $user->ID ) ); ?>" class="regular-text" />
+                        <br/>
+                        <span class="description">Please enter the text you wish to display for your RideWithGPS profile link.</span>
+                    </td>
+                </tr>
+            </table>
+    <?php }
 
+   add_action('show_user_profile', 'display_rwgps_user_profile_info');
+   add_action('edit_user_profile', 'display_rwgps_user_profile_info');
+
+   add_action('personal_options_update', 'update_rwgps_user_profile_info');
+   add_action('edit_user_profile_update', 'update_rwgps_user_profile_info');
+
+   function update_rwgps_user_profile_info( $user_id ){
+         
+       //if ( !current_user_can( 'edit_user', $user_id ) )
+       // return FALSE;
+
+       //global $current_user;
+       //if(!user_can($current_user->ID, 'edit_user'));
+		//return FALSE;
+	
+	update_usermeta( $user_id, 'rwgps_userid', $_POST['rwgps_userid'] );
+    update_usermeta( $user_id, 'rwgps_user_profile_text', $_POST['rwgps_user_profile_text'] );
+   }
+
+   
 ?>
 
 
