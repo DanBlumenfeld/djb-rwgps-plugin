@@ -3,7 +3,7 @@
    Plugin Name: RideWithGPS Utilities
    Plugin URI: http://danieljblumenfeld.com/ridewithgps-wordpress-plugin/
    Description: A plugin to provide utility functions to aid in integrating RideWithGPS data with Wordpress
-   Version: 0.0.1
+   Version: 0.0.3
    Author: Dan Blumenfeld
    Author URI: http://danieljblumenfeld.com
    License: GPL2
@@ -14,7 +14,116 @@
    /**************************************************************************/ 
    /*
 		0.0.2		1/12/2015	created initial plugin, includes user, map and elevation img shortcodes
+        0.0.3       1/12/2015   Added shortcode and logic to render a RideWithGPS widget
    */
+
+   /**************************************************************************/
+   /* Ride Widget                                                            */ 
+   /**************************************************************************/
+   /*
+   Based on http://ridewithgps.com/widgets/new
+
+   Minimum, displaying only a link:
+   <a class="rwgps-widget" href="http://ridewithgps.com/users/1746" data-rwgps-width="300" data-rwgps-user-id="1746">Activities for Dan Blumenfeld</a>
+   Displaying last 3 recent activities:
+   <a class="rwgps-widget" href="http://ridewithgps.com/users/1746" data-rwgps-width="300" data-rwgps-user-id="1746" data-rwgps-activities-count="3">Activities for Dan Blumenfeld</a>
+   Displaying summary stats for last 7 days, last 30 days, and year to date:
+   <a class="rwgps-widget" href="http://ridewithgps.com/users/1746" data-rwgps-width="300" data-rwgps-user-id="1746" data-rwgps-include="week month year">Activities for Dan Blumenfeld</a>
+
+   So, variable data is user id (1746 in example above), width (may be px or %) and the base activity string ("Activities for Dan Blumenfeld" in examples above)
+   To display in metric, add data-rwgps-metric="1" attribute
+   To display recent activities, add data-rwgps-activities-count="3" attribute. Limit it to 0-7
+   To display summary stats (7 days, 30 days, year to date), add data-rwgps-include="week month year" attribute. If none specified, add week by default
+
+
+   All are then followed by:
+    <script>
+    (function(d,s) { 
+      if(!d.getElementById('rwgps-sdk')) {
+        var el = d.getElementsByTagName(s)[0],
+            js = d.createElement(s);
+        js.id = 'rwgps-sdk';
+        js.src = "//ridewithgps.com/sdk.min.js";
+        el.parentNode.insertBefore(js, el);
+      }
+    })(document, 'script');
+    </script>
+
+
+   Wordpress widget plugin info :http://www.wpexplorer.com/create-widget-plugin-wordpress/
+
+   */
+
+   //Do we need a separate JS file? Or can we inline it, as shown in the RWGPS widget editor?
+    function rwgps_admin_load_js(){
+       wp_enqueue_script( 'custom_js', plugins_url( '/js/djb-rwgps.js', __FILE__ ));
+    }
+    add_action('admin_enqueue_scripts', 'rwgps_admin_load_js');
+
+
+    function render_rwgps_widget($rwgps_userid, $width, $activity_link_text, $use_metric, $num_recent_activities, $show_summary_week, $show_summary_month, $show_summary_year){
+        ?><a class="rwgps-widget" href="http://ridewithgps.com/users/<?php 
+            echo esc_attr($rwgps_userid) ?>" data-rwgps-width="<?php 
+            echo esc_attr($width) ?>" data-rwgps-user-id="<?php 
+            echo esc_attr($rwgps_userid) ?>" <?php 
+            if($num_recent_activities > 0) 
+            {
+                echo ' data-rwgps-activities-count="'; 
+                echo $num_recent_activities; 
+                echo '"';
+            } 
+
+            //TODO: probably a better way to do this. Populate an array?
+            if($show_summary_week == TRUE || $show_summary_month == TRUE || $show_summary_year == TRUE)
+            {
+                echo ' data-rwgps-include="';
+                if($show_summary_week == TRUE) echo 'week';
+                if($show_summary_month == TRUE) echo ' month';
+                if($show_summary_year == TRUE) echo ' year';
+                echo '"';
+            }
+
+            if($use_metric == TRUE) 
+            {
+               echo ' data-rwgps-metric="1"'; 
+            }?>><?php 
+            echo esc_attr($activity_link_text) ?></a>
+    <script>
+    (function(d,s) { 
+      if(!d.getElementById('rwgps-sdk')) {
+        var el = d.getElementsByTagName(s)[0],
+            js = d.createElement(s);
+        js.id = 'rwgps-sdk';
+        js.src = "//ridewithgps.com/sdk.min.js";
+        el.parentNode.insertBefore(js, el);
+      }
+    })(document, 'script');
+    </script>
+
+   <?php
+    }
+
+    function rwgps_widget_shortcode($atts) {
+        extract( shortcode_atts( array(
+            'rwgps_userid' => '0000000',
+            'width' => '300px',
+            'activity_link_text' => 'RideWithGPS Activities',
+            'use_metric' => FALSE,
+            'num_recent_activities' => 3,
+            'show_summary_week' => FALSE,
+            'show_summary_month' => FALSE,
+            'show_summary_year' => FALSE,
+        ), $atts, 'rwgps_widget'));
+
+        if($rwgps_userid == '0000000')
+        {
+            //TODO: Try to get the id of the current user from usermeta
+        }
+        //TODO: validate num_recent_activities as being a number between 0 and 7 inclusive
+
+        render_rwgps_widget($rwgps_userid, $width, $activity_link_text, $use_metric, $num_recent_activities, $show_summary_week, $show_summary_month, $show_summary_year);
+    }
+    add_shortcode('rwgps-widget', 'rwgps_widget_shortcode');
 
    /**************************************************************************/
    /* Mapping Shortcodes                                                     */ 
